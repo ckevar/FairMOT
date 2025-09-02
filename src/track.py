@@ -74,6 +74,7 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
     timer = Timer()
     results = []
     frame_id = 0
+
     #for path, img, img0 in dataloader:
     for i, (path, img, img0) in enumerate(dataloader):
         #if i % 8 != 0:
@@ -117,34 +118,58 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
     return frame_id, timer.average_time, timer.calls
 
 
-def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), exp_name='demo',
-         save_images=False, save_videos=False, show_image=True):
+def main(opt, data_root='/data/MOT16/train', 
+         det_root=None, 
+         exp_name='demo',
+         save_images=False, 
+         save_videos=False, 
+         show_image=True,
+         data_type='mot'):
+
     logger.setLevel(logging.INFO)
     result_root = os.path.join(data_root, '..', 'results', exp_name)
     mkdir_if_missing(result_root)
-    data_type = 'mot'
+    seqs = list(os.listdir(data_root))
+
+    img_dir = 'img1' if 'mot' == data_type else ''
 
     # run tracking
     accs = []
     n_frame = 0
     timer_avgs, timer_calls = [], []
+
     for seq in seqs:
+
         output_dir = os.path.join(data_root, '..', 'outputs', exp_name, seq) if save_images or save_videos else None
+
         logger.info('start seq: {}'.format(seq))
-        dataloader = datasets.LoadImages(osp.join(data_root, seq, 'img1'), opt.img_size)
+        dataloader = datasets.LoadImages(osp.join(data_root, seq, img_dir), opt.img_size)
         result_filename = os.path.join(result_root, '{}.txt'.format(seq))
-        meta_info = open(os.path.join(data_root, seq, 'seqinfo.ini')).read()
-        frame_rate = int(meta_info[meta_info.find('frameRate') + 10:meta_info.find('\nseqLength')])
-        nf, ta, tc = eval_seq(opt, dataloader, data_type, result_filename,
-                              save_dir=output_dir, show_image=show_image, frame_rate=frame_rate)
+
+        if 'mot' == data_type:
+            meta_info = open(os.path.join(data_root, seq, 'seqinfo.ini')).read()
+            frame_rate = int(meta_info[meta_info.find('frameRate') + 10:meta_info.find('\nseqLength')])
+        elif 'kitti' == data_type:
+            frame_rate = 15
+
+        nf, ta, tc = eval_seq(opt, 
+                              dataloader, 
+                              data_type, 
+                              result_filename,
+                              save_dir=output_dir, 
+                              show_image=show_image, 
+                              frame_rate=frame_rate)
+
         n_frame += nf
         timer_avgs.append(ta)
         timer_calls.append(tc)
 
         # eval
         logger.info('Evaluate seq: {}'.format(seq))
+        """ Legacy, independent evaluator
         evaluator = Evaluator(data_root, seq, data_type)
         accs.append(evaluator.eval_file(result_filename))
+        """ 
         if save_videos:
             output_video_path = osp.join(output_dir, '{}.mp4'.format(seq))
             cmd_str = 'ffmpeg -f image2 -i {}/%05d.jpg -c:v copy {}'.format(output_dir, output_video_path)
@@ -156,6 +181,7 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
     logger.info('Time elapsed: {:.2f} seconds, FPS: {:.2f}'.format(all_time, 1.0 / avg_time))
 
     # get summary
+    """ Legacy, independent evaluator
     metrics = mm.metrics.motchallenge_metrics
     mh = mm.metrics.create()
     summary = Evaluator.get_summary(accs, seqs, metrics)
@@ -165,7 +191,9 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
         namemap=mm.io.motchallenge_metric_names
     )
     print(strsummary)
+
     Evaluator.save_summary(summary, os.path.join(result_root, 'summary_{}.xlsx'.format(exp_name)))
+    """
 
 
 if __name__ == '__main__':
@@ -213,7 +241,8 @@ if __name__ == '__main__':
                       PETS09-S2L2
                       TUD-Crossing
                       Venice-1'''
-        data_root = os.path.join(opt.data_dir, 'MOT15/images/test')
+        data_root = os.path.join(opt.data_dir, 'MOT15/test/image')
+
     if opt.test_mot17:
         seqs_str = '''MOT17-01-SDP
                       MOT17-03-SDP
@@ -222,16 +251,20 @@ if __name__ == '__main__':
                       MOT17-08-SDP
                       MOT17-12-SDP
                       MOT17-14-SDP'''
-        data_root = os.path.join(opt.data_dir, 'MOT17/images/test')
+        data_root = os.path.join(opt.data_dir, 'MOT17/test')
+        data_type = 'mot'
+
     if opt.val_mot17:
-        seqs_str = '''MOT17-02-SDP
-                      MOT17-04-SDP
-                      MOT17-05-SDP
-                      MOT17-09-SDP
-                      MOT17-10-SDP
-                      MOT17-11-SDP
-                      MOT17-13-SDP'''
-        data_root = os.path.join(opt.data_dir, 'MOT17/images/train')
+        seqs_str = '''MOT17-02
+                      MOT17-04
+                      MOT17-05
+                      MOT17-09
+                      MOT17-10
+                      MOT17-11
+                      MOT17-13'''
+        data_root = os.path.join(opt.data_dir, 'MOT17/train')
+        data_type = 'mot'
+
     if opt.val_mot15:
         seqs_str = '''Venice-2
                       KITTI-13
@@ -260,12 +293,30 @@ if __name__ == '__main__':
                       MOT20-08
                       '''
         data_root = os.path.join(opt.data_dir, 'MOT20/images/test')
-    seqs = [seq.strip() for seq in seqs_str.split()]
+
+    # New {
+    if opt.val_kitti:
+        data_root = os.path.join(opt.data_dir, "KITTI/training/image_02")
+        data_type = 'kitti'
+
+    if opt.test_kitti:
+        data_root = os.path.join(opt.data_dir, "KITTI/testing/image_02")
+        data_type = 'kitti'
+
+    if opt.val_waymoV2_mot:
+        data_root = os.path.join(opt.data_dir, "waymo/waymoV2-mot17/train")
+        data_type = 'mot'
+
+    if opt.test_waymoV2_mot:
+        data_root = os.path.join(opt.data_dir, "waymo/waymoV2-mot17/val")
+        data_type = 'mot'
+
+    # }
 
     main(opt,
          data_root=data_root,
-         seqs=seqs,
          exp_name='MOT17_test_public_dla34',
          show_image=False,
          save_images=False,
-         save_videos=False)
+         save_videos=False,
+         data_type=data_type)
