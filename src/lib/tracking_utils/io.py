@@ -43,6 +43,8 @@ def read_results(filename, data_type: str, is_gt=False, is_ignore=False):
 
 
 """
+MOT: 
+
 labels={'ped', ...			% 1
 'person_on_vhcl', ...	% 2
 'car', ...				% 3
@@ -57,12 +59,35 @@ labels={'ped', ...			% 1
 'reflection', ...		% 12
 'crowd' ...			% 13
 };
+
+KITTI:
+labels={'Car', ...
+'Van', 
+'Truck',
+'Pedestrian', 
+'Person_sitting', 
+'Cyclist', 
+'Tram',
+'Misc',
+'DontCare'
+};
+
+WaymoV2:
+labels={
+'Car',
+'Pedestrian',
+'Bicycle'
+}
 """
 
-
 def read_mot_results(filename, is_gt, is_ignore):
+    """ LEGACY
     valid_labels = {1}
     ignore_labels = {2, 7, 8, 12}
+    """
+    
+    valid_labels = {1, 2, 3, 4, 5, 7} # MOT17
+    ignore_labels = {6, 8, 9, 10, 11, 12}
     results_dict = dict()
     if os.path.isfile(filename):
         with open(filename, 'r') as f:

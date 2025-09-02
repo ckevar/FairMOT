@@ -107,6 +107,14 @@ class opts(object):
     self.parser.add_argument('--val_mot17', default=True, help='val mot17')
     self.parser.add_argument('--val_mot20', default=False, help='val mot20')
     self.parser.add_argument('--test_mot20', default=False, help='test mot20')
+
+    # New {
+    self.parser.add_argument("--val_kitti", default=False, help="validation kitti")
+    self.parser.add_argument("--test_kitti", default=False, help="test kitti")
+    self.parser.add_argument("--val_waymoV2_mot", default=False, help="validation WaymoV2 in mot format")
+    self.parser.add_argument("--test_waymoV2_mot", default=False, help="test WaymoV2 in mot format")
+    self.parser.add_argument("--reference_model", default=None, help="Architecture of the model to be loaded (reference model).")
+    # }
     self.parser.add_argument('--val_hie', default=False, help='val hie')
     self.parser.add_argument('--test_hie', default=False, help='test hie')
     self.parser.add_argument('--conf_thres', type=float, default=0.4, help='confidence thresh for tracking')

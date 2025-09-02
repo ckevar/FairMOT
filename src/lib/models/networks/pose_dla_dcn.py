@@ -19,7 +19,18 @@ BN_MOMENTUM = 0.1
 logger = logging.getLogger(__name__)
 
 def get_model_url(data='imagenet', name='dla34', hash='ba72cf86'):
-    return join('http://dl.yf.io/dla/models', data, '{}-{}.pth'.format(name, hash))
+    """ It's possible to download it manually from
+
+    https://code.ornl.gov/thorn/thorn-model-zoo/-/tree/main?ref_type=heads
+
+    """
+    return join('../../../models', '{}-{}.pth').format(name, hash)
+    
+    """
+    Legacy:
+    # return join('http://dl.yf.io/dla/models', data, '{}-{}.pth'.format(name, hash))
+    """
+
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -292,8 +303,9 @@ class DLA(nn.Module):
         return y
 
     def load_pretrained_model(self, data='imagenet', name='dla34', hash='ba72cf86'):
-        # fc = self.fc
+        #fc = self.fc
         if name.endswith('.pth'):
+            #model_weights = torch.load("../models/dla34-ba72cf86.pth")
             model_weights = torch.load(data + name)
         else:
             model_url = get_model_url(data, name, hash)
@@ -306,12 +318,16 @@ class DLA(nn.Module):
         # self.fc = fc
 
 
-def dla34(pretrained=True, **kwargs):  # DLA-34
+def dla34(pretrained=True, model_file=None, **kwargs):  # DLA-34
     model = DLA([1, 1, 1, 2, 2, 1],
                 [16, 32, 64, 128, 256, 512],
                 block=BasicBlock, **kwargs)
     if pretrained:
-        model.load_pretrained_model(data='imagenet', name='dla34', hash='ba72cf86')
+        if None == model_file:
+            model.load_pretrained_model(data='imagenet', name='dla34', hash='ba72cf86')
+        else:
+            model.load_pretrained_model(data='', name=model_file)
+
     return model
 
 class Identity(nn.Module):
@@ -425,13 +441,21 @@ class Interpolate(nn.Module):
 
 
 class DLASeg(nn.Module):
-    def __init__(self, base_name, heads, pretrained, down_ratio, final_kernel,
-                 last_level, head_conv, out_channel=0):
+    def __init__(self, 
+                 base_name, 
+                 heads, 
+                 pretrained, 
+                 down_ratio, 
+                 final_kernel,
+                 last_level, 
+                 head_conv, 
+                 out_channel=0,
+                 model_file=None):
         super(DLASeg, self).__init__()
         assert down_ratio in [2, 4, 8, 16]
         self.first_level = int(np.log2(down_ratio))
         self.last_level = last_level
-        self.base = globals()[base_name](pretrained=pretrained)
+        self.base = globals()[base_name](pretrained=pretrained, model_file=model_file)
         channels = self.base.channels
         scales = [2 ** i for i in range(len(channels[self.first_level:]))]
         self.dla_up = DLAUp(self.first_level, channels[self.first_level:], scales)
@@ -482,12 +506,13 @@ class DLASeg(nn.Module):
         return [z]
     
 
-def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4):
+def get_pose_net(num_layers, heads, head_conv=256, down_ratio=4, model_file=None):
   model = DLASeg('dla{}'.format(num_layers), heads,
                  pretrained=True,
                  down_ratio=down_ratio,
                  final_kernel=1,
                  last_level=5,
-                 head_conv=head_conv)
+                 head_conv=head_conv,
+                 model_file=model_file)
   return model
 
