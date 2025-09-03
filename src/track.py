@@ -311,15 +311,15 @@ if __name__ == '__main__':
         data_root = os.path.join(opt.data_dir, "waymo/waymoV2-mot17/val")
         data_type = 'mot'
 
-    if None == opt.exp_name:
-        print("\n  Experiment name --exp_name is required")
+    if None == opt.experiment_name:
+        print("\n  Experiment name --experiment_name is required.")
         exit(1)
 
     # }
 
     main(opt,
          data_root=data_root,
-         exp_name=opt.exp_name,
+         exp_name=opt.experiment_name,
          show_image=False,
          save_images=False,
          save_videos=False,
