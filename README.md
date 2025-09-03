@@ -1,4 +1,4 @@
-# FairMOT - Multi-Class Evaluation
+# FairMOT
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/a-simple-baseline-for-multi-object-tracking/multi-object-tracking-on-2dmot15-1)](https://paperswithcode.com/sota/multi-object-tracking-on-2dmot15-1?p=a-simple-baseline-for-multi-object-tracking)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/a-simple-baseline-for-multi-object-tracking/multi-object-tracking-on-mot16)](https://paperswithcode.com/sota/multi-object-tracking-on-mot16?p=a-simple-baseline-for-multi-object-tracking)
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/a-simple-baseline-for-multi-object-tracking/multi-object-tracking-on-mot17)](https://paperswithcode.com/sota/multi-object-tracking-on-mot17?p=a-simple-baseline-for-multi-object-tracking)
@@ -49,11 +49,34 @@ cd ${FAIRMOT_ROOT}
 pip install cython
 pip install -r requirements.txt
 ```
+* Before compiling DCNv2 you need a downgraded version of gcc, because pytorch 1.7 and DCNv2 were build for g++ < 10, so you might want to install the version 9, either withing your system:
+```
+sudo apt install gcc-9 g++-9
+```
+or it can be install in the stupid conda, using mamba:
+```
+conda install conda-forge::mamba
+mamba install conda-forge::gcc=9.5.0 conda-forge::gxx=9.5.0
+```
+Once they were install, it's important to let know setup.py which compilere you will using, so edit the `setup.py` and make it look like this:
+```
+...
+    os.environ["CC"] = "/usr/bin/g++-9" # If g++-9 was installed in the system
+    # or
+    os.environ["CC"] = "conda/path/to/g++-9" # if g++-9 was installed within conda.
+    ...
+
+    # Additionally, just in case:
+    extra_compile_args["nvcc"] = [
+    "-allow-unsupported-compiler", 
+    ...
+...
+```
 * We use [DCNv2_pytorch_1.7](https://github.com/ifzhang/DCNv2/tree/pytorch_1.7) in our backbone network (pytorch_1.7 branch). Previous versions can be found in [DCNv2](https://github.com/CharlesShang/DCNv2).
 ```
 git clone -b pytorch_1.7 https://github.com/ifzhang/DCNv2.git
 cd DCNv2
-./make.sh
+./make.sh # This might fail if you don't have native g++14
 ```
 * In order to run the code for demos, you also need to install [ffmpeg](https://www.ffmpeg.org/).
 
