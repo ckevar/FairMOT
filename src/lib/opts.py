@@ -114,6 +114,7 @@ class opts(object):
     self.parser.add_argument("--val_waymoV2_mot", default=False, help="validation WaymoV2 in mot format")
     self.parser.add_argument("--test_waymoV2_mot", default=False, help="test WaymoV2 in mot format")
     self.parser.add_argument("--reference_model", default=None, help="Architecture of the model to be loaded (reference model).")
+    self.parser.add_argument("--exp_name", default=None, help="experiment name, in order to created a directory to store the results.")
     # }
     self.parser.add_argument('--val_hie', default=False, help='val hie')
     self.parser.add_argument('--test_hie', default=False, help='test hie')
