@@ -372,7 +372,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
             self.label_files[ds] = [
                 x.replace('images', 'labels_with_ids').replace('.png', '.txt').replace('.jpg', '.txt')
                 for x in self.img_files[ds]]
-            #print(f"\n  label files: {self.img_files}")
+            self.img_files[ds] = [
+                    x.replace('images', '') for x in self.img_files[ds]]
 
         for ds, label_paths in self.label_files.items():
             max_index = -1

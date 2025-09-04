@@ -41,8 +41,12 @@ for seq in seqs:
     mkdirs(seq_label_root)
 
     for fid, tid, x, y, w, h, mark, label, _ in gt:
+        """ Legacy: only being trained on pedestrians, we abandong this, to
+        to train on all classes, but keep in mind that this network DOES NOT
+        classify (the network DOES NOT yield a class).
         if mark == 0 or not label == 1:
             continue
+        """
         fid = int(fid)
         tid = int(tid)
         if not tid == tid_last:
