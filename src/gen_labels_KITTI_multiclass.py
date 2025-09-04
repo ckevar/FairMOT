@@ -24,7 +24,7 @@ def mkdirs(d):
         os.makedirs(d)
 
 seq_root = args.seq_root_dir
-label_root = args.out_dir + "/train"
+label_root = args.out_dir
 mkdirs(label_root)
 img_dir = "/image_02"
 label_dir = "/label_02"
@@ -43,7 +43,7 @@ for seq in seqs:
     gt_txt = f"{seq_root}/{label_dir}/{seq}.txt"
     gt = open(gt_txt,'r')
 
-    seq_label_root = osp.join(label_root, seq, 'img1')
+    seq_label_root = osp.join(label_root, seq)
     mkdirs(seq_label_root)
 
     for attr_str in gt:

@@ -1,0 +1,15 @@
+{
+    "root":"/home/chris/Documents/Datasets/mot",
+    "train":
+    {
+        "kitti":"./data/kitti_multiclass.train"
+    },
+    "test_emb":
+    {
+        "kitti":"./data/kitti_multiclass.train"
+    },
+    "test":
+    {
+        "kitti":"./data/kitti_multiclass.train"
+    }
+}

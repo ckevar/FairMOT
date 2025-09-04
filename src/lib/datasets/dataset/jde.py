@@ -364,21 +364,30 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.tid_num = OrderedDict()
         self.tid_start_index = OrderedDict()
         self.num_classes = 1
+        print(f"\n  {paths}")
         for ds, path in paths.items():
+            print(f"\n ds: {ds}")
             with open(path, 'r') as file:
                 self.img_files[ds] = file.readlines()
                 self.img_files[ds] = [osp.join(root, x.strip()) for x in self.img_files[ds]]
                 self.img_files[ds] = list(filter(lambda x: len(x) > 0, self.img_files[ds]))
+
+            replace_dir = "image_02" if "kitti" == ds else "images"
             self.label_files[ds] = [
-                x.replace('images', 'labels_with_ids').replace('.png', '.txt').replace('.jpg', '.txt')
+                x.replace(replace_dir, 'labels_with_ids').replace('.png', '.txt').replace('.jpg', '.txt')
                 for x in self.img_files[ds]]
+            
             self.img_files[ds] = [
                     x.replace('images', '') for x in self.img_files[ds]]
 
         for ds, label_paths in self.label_files.items():
             max_index = -1
             for lp in label_paths:
-                lb = np.loadtxt(lp)
+                try:
+                    lb = np.loadtxt(lp)
+                except:
+                    print(f"\n  {lp} probabily empty frame")
+                    continue
                 if len(lb) < 1:
                     continue
                 if len(lb.shape) < 2:
