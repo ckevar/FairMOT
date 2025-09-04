@@ -19,6 +19,8 @@ from trains.train_factory import train_factory
 
 
 def main(opt):
+
+    print(opt.gpus)
     torch.manual_seed(opt.seed)
     torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
 
@@ -32,7 +34,7 @@ def main(opt):
     transforms = T.Compose([T.ToTensor()])
     dataset = Dataset(opt, dataset_root, trainset_paths, (1088, 608), augment=True, transforms=transforms)
     opt = opts().update_dataset_info_and_set_heads(opt, dataset)
-    print(opt)
+    #print(opt)
 
     logger = Logger(opt)
 
@@ -40,7 +42,7 @@ def main(opt):
     opt.device = torch.device('cuda' if opt.gpus[0] >= 0 else 'cpu')
 
     print('Creating model...')
-    model = create_model(opt.arch, opt.heads, opt.head_conv)
+    model = create_model(opt.arch, opt.heads, opt.head_conv, opt.reference_model)
     optimizer = torch.optim.Adam(model.parameters(), opt.lr)
     start_epoch = 0
 
