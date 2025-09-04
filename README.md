@@ -69,10 +69,6 @@ Once they were install, it's important to let know setup.py which compilere you 
     os.environ["CC"] = "conda/path/to/g++-9" # if g++-9 was installed within conda.
     ...
 
-    # Additionally, just in case:
-    extra_compile_args["nvcc"] = [
-    "-allow-unsupported-compiler", 
-    ...
 ...
 ```
 * We use [DCNv2_pytorch_1.7](https://github.com/ifzhang/DCNv2/tree/pytorch_1.7) in our backbone network (pytorch_1.7 branch). Previous versions can be found in [DCNv2](https://github.com/CharlesShang/DCNv2).
