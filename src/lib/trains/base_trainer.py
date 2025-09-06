@@ -4,8 +4,7 @@ from __future__ import print_function
 
 import time
 import torch
-#from progress.bar import Bar
-from tqdm import tqdm
+from progress.bar import Bar
 from models.data_parallel import DataParallel
 from utils.utils import AverageMeter
 
@@ -58,13 +57,10 @@ class BaseTrainer(object):
     data_time, batch_time = AverageMeter(), AverageMeter()
     avg_loss_stats = {l: AverageMeter() for l in self.loss_stats}
     num_iters = len(data_loader) if opt.num_iters < 0 else opt.num_iters
-    """
     bar = Bar('{}/{}'.format(opt.task, opt.exp_id), max=num_iters)
-    """
     end = time.time()
 
-    #for iter_id, batch in enumerate(data_loader):
-    for iter_id, batch in tqdm(enumerate(data_loader), desc=f"{opt.exp_id}"):
+    for iter_id, batch in enumerate(data_loader):
       if iter_id >= num_iters:
         break
       data_time.update(time.time() - end)
@@ -82,13 +78,10 @@ class BaseTrainer(object):
       batch_time.update(time.time() - end)
       end = time.time()
       
-      """
       suffix = '{phase}: [{0}][{1}/{2}]|Tot: {total:} |ETA: {eta:} '.format(
         epoch, iter_id, num_iters, phase=phase,
         total=bar.elapsed_td, eta=bar.eta_td)
-      """
 
-      suffix = ''
       for l in avg_loss_stats:
         avg_loss_stats[l].update(
           loss_stats[l].mean().item(), batch['input'].size(0))
@@ -101,11 +94,9 @@ class BaseTrainer(object):
       if opt.print_iter > 0:
         if iter_id % opt.print_iter == 0:
           print('{}/{}| {}'.format(opt.task, opt.exp_id, suffix)) 
-      """
       else:
         bar.suffix = suffix
         bar.next()
-      """
       
       if opt.test:
         self.save_result(output, batch, results)
