@@ -6,5 +6,6 @@ python train.py mot \
   --gpus 1 \
   --reference_model "../../../../detectors/fairmot/dla34-ba72cf86.pth" \
   --num_classes 12 \
+  --print_iter 20 \
   --batch_size 2
 cd ..
