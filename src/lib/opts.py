@@ -115,6 +115,7 @@ class opts(object):
     self.parser.add_argument("--test_waymoV2_mot", default=False, help="test WaymoV2 in mot format")
     self.parser.add_argument("--reference_model", default=None, help="Architecture of the model to be loaded (reference model).")
     self.parser.add_argument("--experiment_name", default=None, help="experiment name, in order to created a directory to store the results.")
+    self.parser.add_argument("--num_classes", type=int, default=1, help="Number of classes in the dataset MOT17: 12, KITTI: 9, WaymoV2-MOT: 3. Keep in mind that COCO has been trained in 80 classes. The former FairMOT istrained in 1 class only (pedestrians).")
     # }
     self.parser.add_argument('--val_hie', default=False, help='val hie')
     self.parser.add_argument('--test_hie', default=False, help='test hie')
@@ -216,7 +217,6 @@ class opts(object):
   def update_dataset_info_and_set_heads(self, opt, dataset):
     input_h, input_w = dataset.default_resolution
     opt.mean, opt.std = dataset.mean, dataset.std
-    opt.num_classes = dataset.num_classes
 
     # input_h(w): opt.input_h overrides opt.input_res overrides dataset default
     input_h = opt.input_res if opt.input_res > 0 else input_h
@@ -245,7 +245,7 @@ class opts(object):
 
   def init(self, args=''):
     default_dataset_info = {
-      'mot': {'default_resolution': [608, 1088], 'num_classes': 1,
+      'mot': {'default_resolution': [608, 1088], 
                 'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278],
                 'dataset': 'jde', 'nID': 14455},
     }

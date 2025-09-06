@@ -51,17 +51,41 @@ class Logger(object):
     except:
       pass
     self.start_line = True
+    self.txt2log = ""
 
+  def write(self, txt):
+    txt2log = self.txt2log
+    
+    print(f"Before text update: {self.txt2log}")
+
+    if self.start_line:
+      time_str = time.strftime('%Y-%m-%d-%H-%M')
+      txt2log = f"{time_str}: "
+      self.start_line = False
+
+    txt2log = txt2log + txt
+
+    if '\n' in txt:
+      self.start_line = True
+      self.log.write(txt2log)
+      self.log.flush()
+      self.txt2log = ""
+
+    print(f"After text update: {self.txt2log}")
+
+  """
   def write(self, txt):
     if self.start_line:
       time_str = time.strftime('%Y-%m-%d-%H-%M')
-      self.log.write('{}: {}'.format(time_str, txt))
-    else:
-      self.log.write(txt)  
+      txt = f"{time_str}: {txt}"
+
+    self.log.write(txt)  
+
     self.start_line = False
     if '\n' in txt:
       self.start_line = True
       self.log.flush()
+  """
   
   def close(self):
     self.log.close()

@@ -467,8 +467,10 @@ class DLASeg(nn.Module):
                             [2 ** i for i in range(self.last_level - self.first_level)])
         
         self.heads = heads
+        print(f"\n heads: {heads}\n")
         for head in self.heads:
             classes = self.heads[head]
+            print(f"\n  classes: {classes}, head_conv: {head_conv}, channels: {channels[self.first_level]}\n")
             if head_conv > 0:
               fc = nn.Sequential(
                   nn.Conv2d(channels[self.first_level], head_conv,
