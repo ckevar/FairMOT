@@ -7,5 +7,6 @@ python train.py mot \
   --reference_model "../../../../detectors/fairmot/dla34-ba72cf86.pth" \
   --num_classes 12 \
   --print_iter 20 \
+  --save_model_interval 5 \
   --batch_size 2
 cd ..

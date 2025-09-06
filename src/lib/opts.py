@@ -116,7 +116,11 @@ class opts(object):
     self.parser.add_argument("--reference_model", default=None, help="Architecture of the model to be loaded (reference model).")
     self.parser.add_argument("--experiment_name", default=None, help="experiment name, in order to created a directory to store the results.")
     self.parser.add_argument("--num_classes", type=int, default=1, help="Number of classes in the dataset MOT17: 12, KITTI: 9, WaymoV2-MOT: 3. Keep in mind that COCO has been trained in 80 classes. The former FairMOT istrained in 1 class only (pedestrians).")
+    self.parser.add_argument("--save_model_interval", type=int, default=10000, help="How often to save the model. It's important because every epoch takes a lot of time.")
+
     # }
+
+
     self.parser.add_argument('--val_hie', default=False, help='val hie')
     self.parser.add_argument('--test_hie', default=False, help='test hie')
     self.parser.add_argument('--conf_thres', type=float, default=0.4, help='confidence thresh for tracking')

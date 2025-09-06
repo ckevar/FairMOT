@@ -20,7 +20,6 @@ from trains.train_factory import train_factory
 
 def main(opt):
 
-    print(opt.gpus)
     torch.manual_seed(opt.seed)
     torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
 
@@ -35,7 +34,6 @@ def main(opt):
     print(f"dataset_root {dataset_root}")
     dataset = Dataset(opt, dataset_root, trainset_paths, (1088, 608), augment=True, transforms=transforms)
     opt = opts().update_dataset_info_and_set_heads(opt, dataset)
-    #print(opt)
 
     logger = Logger(opt)
 
@@ -72,20 +70,18 @@ def main(opt):
         log_dict_train, _ = trainer.train(epoch, train_loader)
     
         logger.write('epoch: {} |'.format(epoch))
-        txt2print = f"epoch {epoch}"
         for k, v in log_dict_train.items():
             logger.scalar_summary('train_{}'.format(k), v, epoch)
             logger.write('{} {:8f} | '.format(k, v))
 
-
-        if opt.val_intervals > 0 and epoch % opt.val_intervals == 0:
+        if opt.save_model_interval > 0 and epoch % opt.save_model_interval == 0:
             save_model(os.path.join(opt.save_dir, 'model_{}.pth'.format(mark)),
                        epoch, model, optimizer)
         else:
             save_model(os.path.join(opt.save_dir, 'model_last.pth'),
                        epoch, model, optimizer)
         logger.write('\n')
-        print(txt2print)
+
         if epoch in opt.lr_step:
             save_model(os.path.join(opt.save_dir, 'model_{}.pth'.format(epoch)),
                        epoch, model, optimizer)

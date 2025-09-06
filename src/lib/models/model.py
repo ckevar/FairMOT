@@ -26,7 +26,6 @@ _model_factory = {
 }
 
 def create_model(arch, heads, head_conv, model_file=None):
-  print(f"\n arch: {arch}\n")
   num_layers = int(arch[arch.find('_') + 1:]) if '_' in arch else 0
   arch = arch[:arch.find('_')] if '_' in arch else arch
   get_model = _model_factory[arch]
