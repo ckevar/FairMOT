@@ -81,19 +81,17 @@ class BaseTrainer(object):
       suffix = '{phase}: [{0}][{1}/{2}]|Tot: {total:} |ETA: {eta:} '.format(
         epoch, iter_id, num_iters, phase=phase,
         total=bar.elapsed_td, eta=bar.eta_td)
-
       for l in avg_loss_stats:
         avg_loss_stats[l].update(
           loss_stats[l].mean().item(), batch['input'].size(0))
         suffix = suffix + '|{} {:.4f} '.format(l, avg_loss_stats[l].avg)
-
       if not opt.hide_data_time:
         suffix = suffix + '|Data {dt.val:.3f}s({dt.avg:.3f}s) ' \
           '|Net {bt.avg:.3f}s'.format(dt=data_time, bt=batch_time)
 
       if opt.print_iter > 0:
         if iter_id % opt.print_iter == 0:
-          print('{}/{}| {}'.format(opt.task, opt.exp_id, suffix)) 
+          print('{}/{}| {}'.format(opt.task, opt.exp_id, suffix), flush=True) 
       else:
         bar.suffix = suffix
         bar.next()

@@ -46,47 +46,25 @@ class Logger(object):
       if not os.path.exists(log_dir):
         os.mkdir(log_dir)
     self.log = open(log_dir + '/log.txt', 'w')
+    print(f"\n FIXME: self.log file: {log_dir}/log.txt\n")
     try:
       os.system('cp {}/opt.txt {}/'.format(opt.save_dir, log_dir))
     except:
       pass
-    self.start_line = True
     self.txt2log = ""
 
   def write(self, txt):
-    txt2log = self.txt2log
     
-    print(f"Before text update: {self.txt2log}")
-
-    if self.start_line:
+    if "" == self.txt2log:
       time_str = time.strftime('%Y-%m-%d-%H-%M')
-      txt2log = f"{time_str}: "
-      self.start_line = False
+      self.txt2log = f"{time_str}: "
 
-    txt2log = txt2log + txt
-
+    self.txt2log += txt
     if '\n' in txt:
-      self.start_line = True
-      self.log.write(txt2log)
+      self.log.write(self.txt2log)
       self.log.flush()
       self.txt2log = ""
 
-    print(f"After text update: {self.txt2log}")
-
-  """
-  def write(self, txt):
-    if self.start_line:
-      time_str = time.strftime('%Y-%m-%d-%H-%M')
-      txt = f"{time_str}: {txt}"
-
-    self.log.write(txt)  
-
-    self.start_line = False
-    if '\n' in txt:
-      self.start_line = True
-      self.log.flush()
-  """
-  
   def close(self):
     self.log.close()
   
