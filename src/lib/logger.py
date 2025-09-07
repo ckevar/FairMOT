@@ -46,7 +46,7 @@ class Logger(object):
       if not os.path.exists(log_dir):
         os.mkdir(log_dir)
     self.log = open(log_dir + '/log.txt', 'w')
-    print(f"\n FIXME: self.log file: {log_dir}/log.txt\n")
+
     try:
       os.system('cp {}/opt.txt {}/'.format(opt.save_dir, log_dir))
     except:
