@@ -36,10 +36,12 @@ for seq in seqs:
 
     gt_txt = osp.join(seq_root, seq, 'gt', 'gt.txt')
     gt = np.loadtxt(gt_txt, dtype=np.float64, delimiter=',')
+    if 1 == len(gt.shape):  # Sequences that only have one object in the entire
+        gt = np.array([gt]) # sequence in one frame. 
 
     seq_label_root = osp.join(label_root, seq, 'img1')
     mkdirs(seq_label_root)
-
+    
     for fid, tid, x, y, w, h, mark, label, _ in gt:
         """ Legacy: only being trained on pedestrians, we abandong this, to
         to train on all classes, but keep in mind that this network DOES NOT
