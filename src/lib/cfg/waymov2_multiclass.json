@@ -1,0 +1,15 @@
+{
+    "root":"/home/chris/Documents/Datasets/mot/waymo",
+    "train":
+    {
+        "waymov2":"./data/waymov2_multiclass.train"
+    },
+    "test_emb":
+    {
+        "waymov2":"./data/waymov2_multiclass.train"
+    },
+    "test":
+    {
+        "waymov2":"./data/waymov2_multiclass.train"
+    }
+}

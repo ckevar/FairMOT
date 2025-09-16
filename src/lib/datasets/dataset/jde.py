@@ -364,38 +364,49 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.tid_num = OrderedDict()
         self.tid_start_index = OrderedDict()
         self.num_classes = 1
-
         for ds, path in paths.items():
             with open(path, 'r') as file:
                 self.img_files[ds] = file.readlines()
                 self.img_files[ds] = [osp.join(root, x.strip()) for x in self.img_files[ds]]
                 self.img_files[ds] = list(filter(lambda x: len(x) > 0, self.img_files[ds]))
+            
+            if "kitti" == ds:
+                replace_dir = "image_02"
+            elif "mot" == ds:
+                replace_dir = "images"
+            elif "waymov2" == ds:
+                replace_dir = "train"
+            else:
+                raise ValueError(f"dataset {ds} not supported.")
 
-            replace_dir = "image_02" if "kitti" == ds else "images"
             self.label_files[ds] = [
                 x.replace(replace_dir, 'labels_with_ids').replace('.png', '.txt').replace('.jpg', '.txt')
                 for x in self.img_files[ds]]
             
             self.img_files[ds] = [
                     x.replace('images', '') for x in self.img_files[ds]]
-
+        
+        
         for ds, label_paths in self.label_files.items():
             max_index = -1
             for lp in label_paths:
-                try:
-                    lb = np.loadtxt(lp)
-                except:
-                    #if opt.empty_frames:
-                    raise FileNotFoundError(f"\n  {lp} probabily empty frame. If this is true, then enable --empty_frames. Otherwise the path to files is wrong.")
+                if not os.path.isfile(lp):
+                    if not opt.empty_frames:
+                        raise FileNotFoundError(f"{lp} probabily empty frame. If this is true, then enable --empty_frames. Otherwise the path to files is wrong.")
                     continue
+
+                lb = np.fromfile(lp, sep=" ")
+
                 if len(lb) < 1:
                     continue
+
                 if len(lb.shape) < 2:
                     img_max = lb[1]
                 else:
                     img_max = np.max(lb[:, 1])
                 if img_max > max_index:
                     max_index = img_max
+
             self.tid_num[ds] = max_index + 1
 
         last_index = 0
@@ -412,6 +423,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.max_objs = opt.K
         self.augment = augment
         self.transforms = transforms
+
 
         print('=' * 80)
         print('dataset summary')
