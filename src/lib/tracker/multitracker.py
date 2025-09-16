@@ -256,7 +256,10 @@ class JDETracker(object):
             id_feature = id_feature.cpu().numpy()
 
         dets = self.post_process(dets, meta)
-        dets = self.merge_outputs([dets])[1]
+        # Legacy:
+        #dets = self.merge_outputs([dets])[1] # Supports only pedestrians
+        # New:
+        dets = np.vstack([dets[k] for k in dets.keys()])
 
         remain_inds = dets[:, 4] > self.opt.conf_thres
         dets = dets[remain_inds]
