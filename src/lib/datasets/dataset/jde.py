@@ -385,8 +385,8 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 try:
                     lb = np.loadtxt(lp)
                 except:
-                    if opt.empty_frames:
-                        raise FileNotFoundError(f"\n  {lp} probabily empty frame. If this is true, then enable --empty_frames. Otherwise the path to files is wrong.")
+                    #if opt.empty_frames:
+                    raise FileNotFoundError(f"\n  {lp} probabily empty frame. If this is true, then enable --empty_frames. Otherwise the path to files is wrong.")
                     continue
                 if len(lb) < 1:
                     continue
