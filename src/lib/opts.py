@@ -34,7 +34,7 @@ class opts(object):
     self.parser.add_argument('--seed', type=int, default=317, 
                              help='random seed') # from CornerNet
     self.parser.add_argument("--empty_frames", action="store_true",
-                             help="It supports the fact some frames dont have any frame, thus there are no label file."
+                             help="It supports the fact some frames dont have any frame, thus there are no label file.")
 
     # log
     self.parser.add_argument('--print_iter', type=int, default=0, 
