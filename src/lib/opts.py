@@ -69,7 +69,8 @@ class opts(object):
                              help='input height. -1 for default from dataset.')
     self.parser.add_argument('--input_w', type=int, default=-1, 
                              help='input width. -1 for default from dataset.')
-    
+    self.parser.add_argument('--max_index', type=int, default=0,
+                             help="if you know the number of ids, its better to place here instead of recomputing it, because FairMOT does it by reading every single label file, which is really expensive.")
     # train
     self.parser.add_argument('--lr', type=float, default=1e-4,
                              help='learning rate for batch size 12.')

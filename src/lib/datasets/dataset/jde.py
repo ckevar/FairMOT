@@ -385,29 +385,32 @@ class JointDataset(LoadImagesAndLabels):  # for training
             
             self.img_files[ds] = [
                     x.replace('images', '') for x in self.img_files[ds]]
+
+        # Monkey patch
+        self.tid_num[ds] = opt.max_index
         
-        
-        for ds, label_paths in self.label_files.items():
-            max_index = -1
-            for lp in label_paths:
-                if not os.path.isfile(lp):
-                    if not opt.empty_frames:
-                        raise FileNotFoundError(f"{lp} probabily empty frame. If this is true, then enable --empty_frames. Otherwise the path to files is wrong.")
-                    continue
+        if opt.max_index <= 0:
+            for ds, label_paths in self.label_files.items():
+                max_index = -1
+                for lp in label_paths:
+                    if not os.path.isfile(lp):
+                        if not opt.empty_frames:
+                            raise FileNotFoundError(f"{lp} probabily empty frame. If this is true, then enable --empty_frames. Otherwise the path to files is wrong.")
+                        continue
 
-                lb = np.fromfile(lp, sep=" ")
+                    lb = np.fromfile(lp, sep=" ")
 
-                if len(lb) < 1:
-                    continue
+                    if len(lb) < 1:
+                        continue
 
-                if len(lb.shape) < 2:
-                    img_max = lb[1]
-                else:
-                    img_max = np.max(lb[:, 1])
-                if img_max > max_index:
-                    max_index = img_max
+                    if len(lb.shape) < 2:
+                        img_max = lb[1]
+                    else:
+                        img_max = np.max(lb[:, 1])
+                    if img_max > max_index:
+                        max_index = img_max
 
-            self.tid_num[ds] = max_index + 1
+                self.tid_num[ds] = max_index + 1
 
         last_index = 0
         for i, (k, v) in enumerate(self.tid_num.items()):
