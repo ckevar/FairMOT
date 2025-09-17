@@ -20,6 +20,9 @@ class ModleWithLoss(torch.nn.Module):
     loss, loss_stats = self.loss(outputs, batch)
     return outputs[-1], loss, loss_stats
 
+# NEW
+from torch.cuda.amp import autocast, GradScaler
+# end NEW
 class BaseTrainer(object):
   def __init__(
     self, opt, model, optimizer=None):
@@ -28,6 +31,9 @@ class BaseTrainer(object):
     self.loss_stats, self.loss = self._get_losses(opt)
     self.model_with_loss = ModleWithLoss(model, self.loss)
     self.optimizer.add_param_group({'params': self.loss.parameters()})
+    # NEW
+    self.scaler = GradScaler()
+    # end NEW
 
   def set_device(self, gpus, chunk_sizes, device):
     if len(gpus) > 1:
@@ -69,12 +75,27 @@ class BaseTrainer(object):
         if k != 'meta':
           batch[k] = batch[k].to(device=opt.device, non_blocking=True)
 
+      # NEW
+      self.optimizer.zero_grad()
+      with autocast():
+          output, loss, loss_stats = model_with_loss(batch)
+          loss = loss.mean()
+      self.scaler.scale(loss).backward()
+      self.scaler.step(self.optimizer)
+      self.scaler.update()
+      # End NEW
+
+      # LEGACY:
+      """
       output, loss, loss_stats = model_with_loss(batch)
       loss = loss.mean()
       if phase == 'train':
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+      """
+      # End LEGACY
+
       batch_time.update(time.time() - end)
       end = time.time()
       

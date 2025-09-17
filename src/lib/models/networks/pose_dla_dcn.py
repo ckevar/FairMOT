@@ -330,6 +330,10 @@ def dla34(pretrained=True, model_file=None, **kwargs):  # DLA-34
 
     return model
 
+# NEW AMP
+from torch.cuda.amp import autocast
+# End NEW
+
 class Identity(nn.Module):
 
     def __init__(self):
@@ -368,8 +372,21 @@ class DeformConv(nn.Module):
         self.conv = DCN(chi, cho, kernel_size=(3,3), stride=1, padding=1, dilation=1, deformable_groups=1)
 
     def forward(self, x):
-        x = self.conv(x)
-        x = self.actf(x)
+        # New AMP
+        if x.dtype != torch.float32:
+            x = x.float()
+
+        with autocast(enabled=False):
+            x = self.conv(x)
+            x = self.actf(x)
+
+        if "cuda" == x.device.type and x.dtype != torch.float16:
+            x = x.half()  # or .to(torch.get_autocast_gpu_dtype())
+        # END AMP
+        
+        # LEGACY:
+        #x = self.conv(x)
+        #x = self.actf(x)
         return x
 
 
