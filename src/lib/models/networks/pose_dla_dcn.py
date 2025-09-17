@@ -207,7 +207,7 @@ class Tree(nn.Module):
         self.downsample = None
         self.project = None
         self.levels = levels
-        print("stride", stride)
+
         if stride > 1:
             self.downsample = nn.MaxPool2d(stride, stride=stride)
         if in_channels != out_channels:
@@ -219,7 +219,6 @@ class Tree(nn.Module):
 
     def forward(self, x, residual=None, children=None):
         children = [] if children is None else children
-        print("x.shape", x.shape)
         bottom = self.downsample(x) if self.downsample else x
         residual = self.project(bottom) if self.project else bottom
         if self.level_root:

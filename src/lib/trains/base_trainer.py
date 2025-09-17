@@ -67,6 +67,7 @@ class BaseTrainer(object):
     end = time.time()
 
     for iter_id, batch in enumerate(data_loader):
+      print(batch.shape)
       if iter_id >= num_iters:
         break
       data_time.update(time.time() - end)
