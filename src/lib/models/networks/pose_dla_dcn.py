@@ -373,15 +373,23 @@ class DeformConv(nn.Module):
 
     def forward(self, x):
         # New AMP
+        print("1", x.shape)
         if x.dtype != torch.float32:
             x = x.float()
 
+        print("2", x.shape)
         with autocast(enabled=False):
             x = self.conv(x)
+
+            print("3", x.shape)
             x = self.actf(x)
 
+            print("4", x.shape)
+
+        print("5", x.shape)
         if "cuda" == x.device.type and x.dtype != torch.float16:
             x = x.half()  # or .to(torch.get_autocast_gpu_dtype())
+        print("6", x.shape)
         # END AMP
         
         # LEGACY:
