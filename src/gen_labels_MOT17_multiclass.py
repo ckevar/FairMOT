@@ -23,7 +23,7 @@ def mkdirs(d):
         os.makedirs(d)
 
 seq_root = args.seq_root_dir
-label_root = args.out_dir + "/train"
+label_root = args.out_dir + "/labels_with_ids"
 mkdirs(label_root)
 seqs = [s for s in os.listdir(seq_root)]
 
@@ -38,14 +38,15 @@ for seq in seqs:
     gt = np.loadtxt(gt_txt, dtype=np.float64, delimiter=',')
     if 1 == len(gt.shape):  # Sequences that only have one object in the entire
         gt = np.array([gt]) # sequence in one frame. 
+    gt = gt[gt[:,1].argsort()]
 
     seq_label_root = osp.join(label_root, seq, 'img1')
     mkdirs(seq_label_root)
     
     for fid, tid, x, y, w, h, mark, label, _ in gt:
         """ Legacy: only being trained on pedestrians, we abandong this, to
-        to train on all classes, but keep in mind that this network DOES NOT
-        classify (the network DOES NOT yield a class).
+        to train on all classes, The network is capable to classify based on the number of 
+        headmap heads it has.
         if mark == 0 or not label == 1:
             continue
         """
@@ -56,8 +57,10 @@ for seq in seqs:
             tid_last = tid
         x += w / 2
         y += h / 2
+        label = int(label) - 1
+
         label_fpath = osp.join(seq_label_root, '{:06d}.txt'.format(fid))
-        label_str = '0 {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
-            tid_curr, x / seq_width, y / seq_height, w / seq_width, h / seq_height)
+        label_str = '{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
+            label, tid_curr, x / seq_width, y / seq_height, w / seq_width, h / seq_height)
         with open(label_fpath, 'a') as f:
             f.write(label_str)

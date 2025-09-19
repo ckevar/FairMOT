@@ -356,6 +356,40 @@ class JointDataset(LoadImagesAndLabels):  # for training
     std = None
     num_classes = 1
 
+
+    def __create_label_files_from_img_files__(self, ds):
+        if "kitti" == ds: 
+            replace_dir = "image_02"
+
+        elif "mot17" == ds: 
+            replace_dir = "images"
+
+        elif "waymov2" == ds: 
+            replace_dir = "train"
+
+        else: 
+            raise ValueError(f"dataset {ds} not supported.")
+
+        self.label_files[ds] = [
+            x.replace(replace_dir, 'labels_with_ids').replace('.png', '.txt').replace('.jpg', '.txt')
+            for x in self.img_files[ds]]
+
+
+    def __create_label_files_from_label_dir__(self, ds, label_dir):
+        if "kitti" == ds:
+            dir_to_split = "/image_02"
+        elif "mot17" == ds or "waymov2" == ds:
+            dir_to_split = "/train"
+
+
+        # Debug: print("img path", self.img_files[ds][0])
+        self.label_files[ds] = [
+                label_dir + x.replace('.jpg','.txt').replace('.png','.txt').split(dir_to_split)[-1]
+                for x in self.img_files[ds]
+        ]
+        # Debug: print(self.label_files[ds][0], self.img_files[ds][0])
+        # Debug: exit(1)
+
     def __init__(self, opt, root, paths, img_size=(1088, 608), augment=False, transforms=None):
         self.opt = opt
         dataset_names = paths.keys()
@@ -363,54 +397,30 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.label_files = OrderedDict()
         self.tid_num = OrderedDict()
         self.tid_start_index = OrderedDict()
-        self.num_classes = 1
+        # Legacy: 
+        #self.num_classes = 1
+        # NEW: 
+        self.num_classes = opt.num_classes
+        label_dir = opt.label_dir
+
         for ds, path in paths.items():
             with open(path, 'r') as file:
                 self.img_files[ds] = file.readlines()
                 self.img_files[ds] = [osp.join(root, x.strip()) for x in self.img_files[ds]]
+                if label_dir: self.__create_label_files_from_label_dir__(ds, label_dir)
                 self.img_files[ds] = list(filter(lambda x: len(x) > 0, self.img_files[ds]))
-            
-            if "kitti" == ds:
-                replace_dir = "image_02"
-            elif "mot" == ds:
-                replace_dir = "images"
-            elif "waymov2" == ds:
-                replace_dir = "train"
-            else:
-                raise ValueError(f"dataset {ds} not supported.")
 
-            self.label_files[ds] = [
-                x.replace(replace_dir, 'labels_with_ids').replace('.png', '.txt').replace('.jpg', '.txt')
-                for x in self.img_files[ds]]
-            
+            if label_dir is None: self.__create_label_files_from_img_files__(ds)
+
             self.img_files[ds] = [
                     x.replace('images', '') for x in self.img_files[ds]]
 
-        # Monkey patch
+        # Monkey patch: Because the next section only counts the amounts ids.
         self.tid_num[ds] = opt.max_index
-        
+      
         if opt.max_index <= 0:
             for ds, label_paths in self.label_files.items():
-                max_index = -1
-                for lp in label_paths:
-                    if not os.path.isfile(lp):
-                        if not opt.empty_frames:
-                            raise FileNotFoundError(f"{lp} probabily empty frame. If this is true, then enable --empty_frames. Otherwise the path to files is wrong.")
-                        continue
-
-                    lb = np.fromfile(lp, sep=" ")
-
-                    if len(lb) < 1:
-                        continue
-
-                    if len(lb.shape) < 2:
-                        img_max = lb[1]
-                    else:
-                        img_max = np.max(lb[:, 1])
-                    if img_max > max_index:
-                        max_index = img_max
-
-                self.tid_num[ds] = max_index + 1
+                self.tid_num[ds] = self.__count_indices__(label_paths, opt.empty_frames)
 
         last_index = 0
         for i, (k, v) in enumerate(self.tid_num.items()):
@@ -427,7 +437,6 @@ class JointDataset(LoadImagesAndLabels):  # for training
         self.augment = augment
         self.transforms = transforms
 
-
         print('=' * 80)
         print('dataset summary')
         print(self.tid_num)
@@ -435,6 +444,29 @@ class JointDataset(LoadImagesAndLabels):  # for training
         print('start index')
         print(self.tid_start_index)
         print('=' * 80)
+
+    def __count_indices__(self, label_paths, empty_frames):
+        max_index = -1
+        for lp in label_paths:
+            if not os.path.isfile(lp):
+                if not empty_frames:
+                    raise FileNotFoundError(f"{lp} probabily empty frame. If this is true, then enable --empty_frames. Otherwise the path to files is wrong.")
+                continue
+            
+            lb = np.loadtxt(lp, delimiter=" ")
+
+            if len(lb) < 1:
+                continue
+            if len(lb.shape) < 2:
+                img_max = lb[1]
+            else:
+                img_max = np.max(lb[:, 1])
+
+            if img_max > max_index:
+                max_index = img_max
+
+        return max_index + 1
+
 
     def __getitem__(self, files_index):
 
@@ -448,7 +480,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
 
         imgs, labels, img_path, (input_h, input_w) = self.get_data(img_path, label_path)
         for i, _ in enumerate(labels):
-            if labels[i, 1] > -1:
+            if labels[i, 1] > -1: # This discard if track ids are negative
                 labels[i, 1] += self.tid_start_index[ds]
 
         output_h = imgs.shape[1] // self.opt.down_ratio
@@ -503,6 +535,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
                             bbox_amodal[2] - ct[0], bbox_amodal[3] - ct[1]
                 else:
                     wh[k] = 1. * w, 1. * h
+                
                 ind[k] = ct_int[1] * output_w + ct_int[0]
                 reg[k] = ct - ct_int
                 reg_mask[k] = 1

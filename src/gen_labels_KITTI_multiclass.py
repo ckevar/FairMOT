@@ -23,6 +23,51 @@ def mkdirs(d):
     if not osp.exists(d):
         os.makedirs(d)
 
+KITTI_labels = {
+        'Car': 1,
+        'Van': 2,
+        'Truck': 3,
+        'Pedestrian': 4, 
+        'Person': 5, # person sitting
+        'Cyclist': 6, 
+        'Tram': 7,
+        'Misc': 8,
+        'DontCare': 9
+        }
+
+def kitti_np_loadtxt(filename):
+    """ This only reads the attributes of interest for FairMOT:
+    1. frame id
+    2. track id
+    3. class 
+    4. box left
+    5. box top
+    6. box right
+    7. box bottom
+    """
+    gt = open(filename, 'r')
+
+    sequence = [[], [], [], [], [], [], []]
+    for attr_str in gt:
+        attr = attr_str.split(' ')
+        sequence[0].append(float(attr[0])) # It should be int, but when the lists
+        sequence[1].append(float(attr[1])) # get cast into arrays, what we got is
+        sequence[2].append(float(KITTI_labels[attr[2]])) # array of floats.
+        sequence[3].append(float(attr[6]))
+        sequence[4].append(float(attr[7]))
+        sequence[5].append(float(attr[8]))
+        sequence[6].append(float(attr[9]))
+
+    gt.close()
+
+    sequence = np.array(sequence).T
+    # Sort by track ids
+    sequence = sequence[sequence[:, 1].argsort()]
+
+    return sequence
+
+
+
 seq_root = args.seq_root_dir
 label_root = args.out_dir
 mkdirs(label_root)
@@ -41,20 +86,19 @@ for seq in seqs:
     img.close()
 
     gt_txt = f"{seq_root}/{label_dir}/{seq}.txt"
-    gt = open(gt_txt,'r')
+    gt = kitti_np_loadtxt(gt_txt)
 
     seq_label_root = osp.join(label_root, seq)
     mkdirs(seq_label_root)
 
-    for attr_str in gt:
-        attr = attr_str.split(' ')
+    for attr in gt:
         fid = int(attr[0])
-        tid = int(attr[1]) # attr: 2, 3 and 4 ignored.
-
-        x = float(attr[5]) # left
-        y = float(attr[6]) # top
-        right = float(attr[7])
-        bottom = float(attr[8])
+        tid = int(attr[1])
+        cls = int(attr[2]) - 1
+        x = attr[3] # left
+        y = attr[4] # top
+        right = attr[5]
+        bottom = attr[6]
         
         w = right - x
         h = bottom - y
@@ -65,9 +109,9 @@ for seq in seqs:
         x += w / 2
         y += h / 2
         label_fpath = osp.join(seq_label_root, '{:06d}.txt'.format(fid))
-        label_str = '0 {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
-            tid_curr, x / seq_width, y / seq_height, w / seq_width, h / seq_height)
+        label_str = '{:d} {:d} {:.6f} {:.6f} {:.6f} {:.6f}\n'.format(
+            cls, tid_curr, x / seq_width, y / seq_height, w / seq_width, h / seq_height)
+
         with open(label_fpath, 'a') as f:
             f.write(label_str)
 
-    gt.close()
