@@ -178,7 +178,7 @@ class opts(object):
     self.parser.add_argument('--not_reg_offset', action='store_true',
                              help='not regress local offset.')
 
-  def check_batch_size_and_gpus(num_gpus, batch_sz):
+  def check_batch_size_and_gpus(self, num_gpus, batch_sz):
     if batch_sz % len(num_gpus) != 0:
       raise ValueError("Batch size has to be multiple the number of GPUS.")
 
