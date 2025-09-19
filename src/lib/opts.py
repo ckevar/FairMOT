@@ -81,7 +81,7 @@ class opts(object):
     self.parser.add_argument('--num_epochs', type=int, default=30,
                              help='total training epochs.')
     self.parser.add_argument('--batch_size', type=int, default=12,
-                             help='batch size')
+                             help='batch size. It has to be multiple of the number of GPUS')
     self.parser.add_argument('--master_batch_size', type=int, default=-1,
                              help='batch size on the master gpu.')
     self.parser.add_argument('--num_iters', type=int, default=-1,
