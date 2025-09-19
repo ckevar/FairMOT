@@ -75,7 +75,7 @@ def main(opt):
             logger.scalar_summary('train_{}'.format(k), v, epoch)
             logger.write('{} {:8f} | '.format(k, v))
 
-        if opt.save_model_interval > 0 and epoch % opt.save_model_interval == 0 and 1 == epoch:
+        if opt.save_model_interval > 0 and epoch % opt.save_model_interval == 0 or 1 == epoch:
             save_model(os.path.join(opt.save_dir, 'model_{}.pth'.format(mark)),
                        epoch, model, optimizer)
         else:
