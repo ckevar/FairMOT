@@ -178,15 +178,22 @@ class opts(object):
     self.parser.add_argument('--not_reg_offset', action='store_true',
                              help='not regress local offset.')
 
+  def check_batch_size_and_gpus(num_gpus, batch_sz):
+    if batch_sz % len(num_gpus) != 0:
+      raise ValueError("Batch size has to be multiple the number of GPUS.")
+
   def parse(self, args=''):
     if args == '':
       opt = self.parser.parse_args()
     else:
       opt = self.parser.parse_args(args)
 
+    check_batch_size_and_gpus(opt)
+
     opt.gpus_str = opt.gpus
     opt.gpus = [int(gpu) for gpu in opt.gpus.split(',')]
     opt.lr_step = [int(i) for i in opt.lr_step.split(',')]
+    check_batch_size_and_gpus(opt.gpus, opt.batch_size)
 
     opt.fix_res = not opt.keep_res
     print('Fix size testing.' if opt.fix_res else 'Keep resolution testing.')
