@@ -219,7 +219,12 @@ class Tree(nn.Module):
 
     def forward(self, x, residual=None, children=None):
         children = [] if children is None else children
-        bottom = self.downsample(x) if self.downsample else x
+        if self.downsample:
+            print("tensore before pooling", x.shape)
+            bottom = self.downsample(x)
+        else:
+            bottom = x
+        #bottom = self.downsample(x) if self.downsample else x
         residual = self.project(bottom) if self.project else bottom
         if self.level_root:
             children.append(bottom)
