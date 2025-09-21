@@ -220,7 +220,6 @@ class Tree(nn.Module):
     def forward(self, x, residual=None, children=None):
         children = [] if children is None else children
         if self.downsample:
-            print("tensore before pooling", x.shape)
             bottom = self.downsample(x)
         else:
             bottom = x
