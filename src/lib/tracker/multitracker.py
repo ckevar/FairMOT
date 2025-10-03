@@ -167,7 +167,7 @@ class STrack(BaseTrack):
     def __repr__(self):
         return 'OT_{}_({}-{})'.format(self.track_id, self.start_frame, self.end_frame)
 
-
+import time
 class JDETracker(object):
     def __init__(self, opt, frame_rate=30):
         self.opt = opt
@@ -198,15 +198,51 @@ class JDETracker(object):
 
         self.kalman_filter = KalmanFilter()
 
-    def post_process(self, dets, meta):
+    def post_process_rev0(self, dets, meta):
+        st = time.time()
         dets = dets.detach().cpu().numpy()
+        t0 = time.time() - st
+        st = time.time()
         dets = dets.reshape(1, -1, dets.shape[2])
+        t1 = time.time() - st
+        st = time.time()
         dets = ctdet_post_process(
             dets.copy(), [meta['c']], [meta['s']],
             meta['out_height'], meta['out_width'], self.opt.num_classes)
+        t2 = time.time() - st
+        st = time.time()
         for j in range(1, self.opt.num_classes + 1):
             dets[0][j] = np.array(dets[0][j], dtype=np.float32).reshape(-1, 5)
+        t3 = time.time() - st
+        print(f"{t0} {t1} {t2} {t3}")
         return dets[0]
+
+
+    def post_process(self, dets, id_feat, meta): # Rev2
+        st = time.time()
+        dets = dets.detach()
+        id_feat = id_feat.detach()
+        remain = torch.ge(dets[0, :, 4], self.opt.conf_thres)
+        dets = dets[:, remain, :]
+        id_feat = id_feat[remain, :]
+        print(id_feat.shape, dets.shape)
+        dets = dets.cpu().numpy()
+        id_feat = id_feat.cpu().numpy()
+        t0 = time.time() - st
+        st = time.time()
+        dets = dets.reshape(1, -1, dets.shape[2])
+        t1 = time.time() - st
+        st = time.time()
+        dets = ctdet_post_process(
+            dets.copy(), [meta['c']], [meta['s']],
+            meta['out_height'], meta['out_width'], self.opt.num_classes)
+        t2 = time.time() - st
+        st = time.time()
+        for j in range(1, self.opt.num_classes + 1):
+            dets[0][j] = np.array(dets[0][j], dtype=np.float32).reshape(-1, 5)
+        t3 = time.time() - st
+        print(f"{t0} {t1} {t2} {t3}")
+        return dets[0], id_feat
 
     def merge_outputs(self, detections):
         results = {}
@@ -242,28 +278,63 @@ class JDETracker(object):
                 'out_width': inp_width // self.opt.down_ratio}
 
         ''' Step 1: Network forward, get detections & embeddings'''
+        #start = time.time()
         with torch.no_grad():
+            
             output = self.model(im_blob)[-1]
+            #forward_timed = time.time() - start
+
+            #start = time.time()
             hm = output['hm'].sigmoid_()
             wh = output['wh']
             id_feature = output['id']
             id_feature = F.normalize(id_feature, dim=1)
+            #normalisation_timed = time.time() - start
 
+            #start = time.time()
             reg = output['reg'] if self.opt.reg_offset else None
             dets, inds = mot_decode(hm, wh, reg=reg, ltrb=self.opt.ltrb, K=self.opt.K)
-            id_feature = _tranpose_and_gather_feat(id_feature, inds)
-            id_feature = id_feature.squeeze(0)
-            id_feature = id_feature.cpu().numpy()
+            #decode_timed = time.time() - start
 
-        dets = self.post_process(dets, meta)
+            #start = time.time()
+            id_feature = _tranpose_and_gather_feat(id_feature, inds)
+            #transposed_timed = time.time() - start
+
+            #start = time.time()
+            id_feature = id_feature.squeeze(0)
+            #sqz_timed = time.time() - start
+
+            #start = time.time()
+            #id_feature = id_feature.cpu().numpy()
+            #mov_timed = time.time() - start
+            #reg_timed = time.time() - start
+            #print(f"{decode_timed} {transposed_timed} {sqz_timed} {mov_timed}")
+
+        #print(f"{forward_timed} {normalisation_timed} {reg_timed}")
+        #network_timed = time.time() - start
+
+        """ ------------ """
+        #start = time.time()
+        dets, id_feature = self.post_process(dets, id_feature, meta)
+        #post_proc_timed0 = time.time() - start
+        #print(post_proc_timed0)
+        """ ------------ """
+
         # Legacy:
         #dets = self.merge_outputs([dets])[1] # Supports only pedestrians
         # New:
         dets = np.vstack([dets[k] for k in dets.keys()])
 
-        remain_inds = dets[:, 4] > self.opt.conf_thres
-        dets = dets[remain_inds]
-        id_feature = id_feature[remain_inds]
+        #remain_inds = dets[:, 4] > self.opt.conf_thres
+        #dets = dets[remain_inds]
+        #post_proc_timed0 = time.time() - start
+
+        #start = time.time()
+        #remain_inds = torch.from_numpy(remain_inds)
+        #id_feature = id_feature[remain_inds].cpu().numpy()
+        #ultimate_move = time.time() - start
+        #print(f"{ultimate_move}")
+        #id_feature = id_feature[remain_inds]
 
         # vis
         '''
@@ -283,8 +354,11 @@ class JDETracker(object):
                           (tlbrs, f) in zip(dets[:, :5], id_feature)]
         else:
             detections = []
+        #post_proc_timed1 = time.time() - start
+
 
         ''' Add newly detected tracklets to tracked_stracks'''
+        #start = time.time() 
         unconfirmed = []
         tracked_stracks = []  # type: list[STrack]
         for track in self.tracked_stracks:
@@ -292,8 +366,12 @@ class JDETracker(object):
                 unconfirmed.append(track)
             else:
                 tracked_stracks.append(track)
+        #track_creation_timed = time.time() - start
+        #print(f"{network_timed} {post_proc_timed0} {post_proc_timed1} {track_creation_timed}")
+        #step1_timed = time.time() - start
 
         ''' Step 2: First association, with embedding'''
+        #start = time.time()
         strack_pool = joint_stracks(tracked_stracks, self.lost_stracks)
         # Predict the current location with KF
         #for strack in strack_pool:
@@ -313,8 +391,10 @@ class JDETracker(object):
             else:
                 track.re_activate(det, self.frame_id, new_id=False)
                 refind_stracks.append(track)
+        #step2_timed = time.time() - start
 
         ''' Step 3: Second association, with IOU'''
+        #start = time.time()
         detections = [detections[i] for i in u_detection]
         r_tracked_stracks = [strack_pool[i] for i in u_track if strack_pool[i].state == TrackState.Tracked]
         dists = matching.iou_distance(r_tracked_stracks, detections)
@@ -347,15 +427,20 @@ class JDETracker(object):
             track = unconfirmed[it]
             track.mark_removed()
             removed_stracks.append(track)
+        #step3_timed = time.time() - start
 
         """ Step 4: Init new stracks"""
+        #start = time.time()
         for inew in u_detection:
             track = detections[inew]
             if track.score < self.det_thresh:
                 continue
             track.activate(self.kalman_filter, self.frame_id)
             activated_starcks.append(track)
+        #step4_timed = time.time() - start
+
         """ Step 5: Update state"""
+        #start = time.time() 
         for track in self.lost_stracks:
             if self.frame_id - track.end_frame > self.max_time_lost:
                 track.mark_removed()
@@ -379,6 +464,8 @@ class JDETracker(object):
         logger.debug('Refind: {}'.format([track.track_id for track in refind_stracks]))
         logger.debug('Lost: {}'.format([track.track_id for track in lost_stracks]))
         logger.debug('Removed: {}'.format([track.track_id for track in removed_stracks]))
+        #step5_timed = time.time() - start
+        #print(f"{step1_timed} {step2_timed} {step3_timed} {step4_timed} {step5_timed}")
 
         return output_stracks
 

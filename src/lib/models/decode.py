@@ -45,13 +45,17 @@ def _topk(scores, K=40):
     return topk_score, topk_inds, topk_clses, topk_ys, topk_xs
 
 
+import time
 def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
     batch, cat, height, width = heat.size()
 
     # heat = torch.sigmoid(heat)
     # perform nms on heatmaps
+    #start = time.time()
     heat = _nms(heat)
+    #nms_timed = time.time() - start
 
+    #start = time.time()
     scores, inds, clses, ys, xs = _topk(heat, K=K)
     if reg is not None:
         reg = _tranpose_and_gather_feat(reg, inds)
@@ -61,6 +65,9 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
     else:
         xs = xs.view(batch, K, 1) + 0.5
         ys = ys.view(batch, K, 1) + 0.5
+    #reg_timed = time.time() - start
+    
+    #start = time.time()
     wh = _tranpose_and_gather_feat(wh, inds)
     if ltrb:
         wh = wh.view(batch, K, 4)
@@ -79,5 +86,7 @@ def mot_decode(heat, wh, reg=None, ltrb=False, K=100):
                             xs + wh[..., 0:1] / 2,
                             ys + wh[..., 1:2] / 2], dim=2)
     detections = torch.cat([bboxes, scores, clses], dim=2)
+    #boxes_timed = time.time() - start
+    #print(f"{nms_timed} {reg_timed} {boxes_timed}")
 
     return detections, inds
