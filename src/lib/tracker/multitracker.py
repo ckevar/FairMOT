@@ -198,7 +198,7 @@ class JDETracker(object):
 
         self.kalman_filter = KalmanFilter()
 
-    def post_process_rev0(self, dets, meta):
+    def post_process(self, dets, meta):
         st = time.time()
         dets = dets.detach().cpu().numpy()
         t0 = time.time() - st
@@ -218,7 +218,7 @@ class JDETracker(object):
         return dets[0]
 
 
-    def post_process(self, dets, id_feat, meta): # Rev2
+    def post_process_rev1(self, dets, id_feat, meta): # Rev1
         st = time.time()
         dets = dets.detach()
         id_feat = id_feat.detach()
@@ -305,7 +305,7 @@ class JDETracker(object):
             #sqz_timed = time.time() - start
 
             #start = time.time()
-            #id_feature = id_feature.cpu().numpy()
+            id_feature = id_feature.cpu().numpy()
             #mov_timed = time.time() - start
             #reg_timed = time.time() - start
             #print(f"{decode_timed} {transposed_timed} {sqz_timed} {mov_timed}")
@@ -315,7 +315,7 @@ class JDETracker(object):
 
         """ ------------ """
         #start = time.time()
-        dets, id_feature = self.post_process(dets, id_feature, meta)
+        dets = self.post_process(dets, meta)
         #post_proc_timed0 = time.time() - start
         #print(post_proc_timed0)
         """ ------------ """
@@ -325,16 +325,16 @@ class JDETracker(object):
         # New:
         dets = np.vstack([dets[k] for k in dets.keys()])
 
-        #remain_inds = dets[:, 4] > self.opt.conf_thres
-        #dets = dets[remain_inds]
+        remain_inds = dets[:, 4] > self.opt.conf_thres
+        dets = dets[remain_inds]
         #post_proc_timed0 = time.time() - start
 
         #start = time.time()
-        #remain_inds = torch.from_numpy(remain_inds)
-        #id_feature = id_feature[remain_inds].cpu().numpy()
+        remain_inds = torch.from_numpy(remain_inds)
+        id_feature = id_feature[remain_inds].cpu().numpy()
         #ultimate_move = time.time() - start
         #print(f"{ultimate_move}")
-        #id_feature = id_feature[remain_inds]
+        id_feature = id_feature[remain_inds]
 
         # vis
         '''
