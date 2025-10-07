@@ -167,7 +167,6 @@ class STrack(BaseTrack):
     def __repr__(self):
         return 'OT_{}_({}-{})'.format(self.track_id, self.start_frame, self.end_frame)
 
-import time
 class JDETracker(object):
     def __init__(self, opt, frame_rate=30):
         self.opt = opt
@@ -199,22 +198,22 @@ class JDETracker(object):
         self.kalman_filter = KalmanFilter()
 
     def post_process(self, dets, meta):
-        st = time.time()
+        #st = time.time()
         dets = dets.detach().cpu().numpy()
-        t0 = time.time() - st
-        st = time.time()
+        #t0 = time.time() - st
+        #st = time.time()
         dets = dets.reshape(1, -1, dets.shape[2])
-        t1 = time.time() - st
-        st = time.time()
+        #t1 = time.time() - st
+        #st = time.time()
         dets = ctdet_post_process(
             dets.copy(), [meta['c']], [meta['s']],
             meta['out_height'], meta['out_width'], self.opt.num_classes)
-        t2 = time.time() - st
-        st = time.time()
+        #t2 = time.time() - st
+        #st = time.time()
         for j in range(1, self.opt.num_classes + 1):
             dets[0][j] = np.array(dets[0][j], dtype=np.float32).reshape(-1, 5)
-        t3 = time.time() - st
-        print(f"{t0} {t1} {t2} {t3}")
+        #t3 = time.time() - st
+        #print(f"{t0} {t1} {t2} {t3}")
         return dets[0]
 
 
@@ -330,8 +329,8 @@ class JDETracker(object):
         #post_proc_timed0 = time.time() - start
 
         #start = time.time()
-        remain_inds = torch.from_numpy(remain_inds)
-        id_feature = id_feature[remain_inds].cpu().numpy()
+        #remain_inds = torch.from_numpy(remain_inds)
+        #id_feature = id_feature[remain_inds].cpu().numpy()
         #ultimate_move = time.time() - start
         #print(f"{ultimate_move}")
         id_feature = id_feature[remain_inds]
